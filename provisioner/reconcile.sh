@@ -7,7 +7,6 @@ set -x
 # https://cloud.google.com/container-registry/docs/advanced-authentication
 
 source config.env
-export LOCATION_ID=gce-location-demo-6
 core_machinegroup_reconcile() {
 	export INSTANCE_DATA=/tmp/instancedata.txt
 	if ! gcloud compute instances list --filter "labels.$HOST_LABELS" >$INSTANCE_DATA; then
@@ -26,7 +25,7 @@ core_machinegroup_reconcile() {
 			IGN_FILE_PATH=$(bx sat host attach --location "$LOCATION_ID" --operating-system "RHCOS" --host-label "$HOST_LABELS" | grep "register-host")
 		fi
 		if [[ "$IGN_FILE_PATH" != *".ign" ]]; then
-			continue
+			return
 		fi
 		NAME_PREFIX="sat"
 		for i in $(seq 1 $NUMBER_TO_SCALE); do
@@ -102,7 +101,7 @@ while true; do
 			WORKER_POOL_NAME=$(echo ${FILE} | awk -F '/' '{print $NF}' | awk -F '.' '{print $1}')
 			source $FILE
 			if ! grep $CLUSTERID $SERVICES_DATA_FILE; then
-				if ! bx cs cluster create satellite --name $CLUSTERID --location "$LOCATION_ID" --version 4.11_openshift --operating-system RHCOS; then
+				if ! bx cs cluster create satellite --name $CLUSTERID --location "$LOCATION_ID" --version "$DOWNSTREAM_CLUSTER_OC_VERSION" --operating-system RHCOS; then
 					continue
 				fi
 			fi

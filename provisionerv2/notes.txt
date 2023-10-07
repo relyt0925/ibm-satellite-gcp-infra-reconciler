@@ -1,0 +1,7 @@
+bx sat location create --name gcp-demo-5 --coreos-enabled --managed-from dal --ha-zone us-east1-b --ha-zone us-east1-c --ha-zone us-east1-d
+
+bx cs cluster create satellite --name gcp-demo-5-d-1 --location gcp-demo-5 --operating-system RHCOS --enable-config-admin --version 4.12_openshift
+
+bx cs worker-pool create satellite --name odf --cluster gcp-demo-5-d-1 --zone us-east1-b --size-per-zone 1 --operating-system RHCOS --label ibm-cloud.kubernetes.io/reconciler-instancetemplate=satellite-e2e-rhcos-odf --label ibm-cloud.kubernetes.io/reconciler-instancetype=n2-standard-16 --host-label worker-pool=gcp-demo-5-d-1-odf
+bx cs zone add satellite --cluster gcp-demo-5-d-1 --worker-pool odf --zone us-east1-c
+bx cs zone add satellite --cluster gcp-demo-5-d-1 --worker-pool odf --zone us-east1-d
