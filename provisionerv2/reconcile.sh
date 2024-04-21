@@ -133,12 +133,13 @@ remove_dead_machines() {
 		NAME=$(_jq '.name')
 		if [[ "$HEALTH_STATE" == "reload-required" ]]; then
 			INSTANCE_DATA_FILE_PATH=/tmp/rminstancedata.json
-			if ! aws ec2 describe-instances --output json --filters Name=network-interface.private-dns-name,Values=${NAME}.ec2.internal >"$INSTANCE_DATA_FILE_PATH"; then
+			NAME_IN_GCE=$(echo "$NAME" | awk -F '.' '{print $1}')
+			ZONE_IN_GCE=$(echo "$NAME" | awk -F '.' '{print $2}')
+			if ! gcloud compute instances list --filter name=$NAME_IN_GCE >$INSTANCE_DATA_FILE_PATH; then
 				continue
 			fi
-			INSTANCE_ID=$(jq -r '.Reservations[0].Instances[0].InstanceId' "$INSTANCE_DATA_FILE_PATH")
-			if [[ -n "$INSTANCE_ID" ]] && [[ "$INSTANCE_ID" != "null" ]]; then
-				if ! aws ec2 terminate-instances --output json --instance-ids "${INSTANCE_ID}" > /dev/null; then
+			if grep "$NAME_IN_GCE" $INSTANCE_DATA_FILE_PATH; then
+				if ! gcloud compute instances delete $NAME_IN_GCE --zone "$ZONE_IN_GCE" --quiet; then
 					continue
 				fi
 			fi
